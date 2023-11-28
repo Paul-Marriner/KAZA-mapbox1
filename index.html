@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Kaza TFCA Birding Route</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    
+    <!-- Third-party-Style-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css">
+    <style>
+        html,body {
+            margin: 0;
+            padding: 0;
+            height: 96%;
+        }
+
+        #map {
+            width: 100%;
+            flex-grow: 1;
+            height: 100%;
+        }
+
+        #container {
+            display: flex;
+            height: 100%;
+        }
+
+        #sidebar {
+            width: 300px;
+            flex-shrink: 0;
+            height: 100%;
+            padding: 30px;
+        }
+
+        button {
+            display: block;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body> 
+    <header class="bg-dark p-2">
+        <div class="container">
+            <h1 class="text-light text-center">KAZA TFCA BIRDING ROUTE</h1>
+        </div>
+    </header>
+
+    <main></main>
+    
+    <!--Third-party-Script-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <div id="container">
+        <div id="sidebar">
+            <button id="fly-to-delta">Fly to Okavango Delta</button>
+            <button id="fit-to-angola">Angola</button>
+            <button id="fit-to-namibia">Namibia</button>
+            <button id="fit-to-botswana">Botswana</button>
+            <button id="fit-to-zambia">Zambia</button>
+            <button id="fit-to-zimbabwe">Zimbabwe</button>
+            <button id="reset-view">Reset</button>
+
+            <button id="toggle-np">Toggle NP</button>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <script>
+        const INITIAL_CENTER = [24, -17]
+        const INITIAL_ZOOM = 5.5
+        mapboxgl.accessToken = 'pk.eyJ1IjoicGF1bG1hcnJpbmVyIiwiYSI6ImNscGF3Z2t0ajBkaTcyaHJsODFvdWJnN2UifQ.UpEPhkANGoT4v1rn6h2LMw';
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/paulmarriner/clpgj6ruc00fx01qt8r07a66a',
+            center: INITIAL_CENTER,
+            zoom: INITIAL_ZOOM,
+            projection: 'globe'
+        });
+        map.addControl(
+            new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl
+            })
+        )
+        map.addControl(new mapboxgl.ScaleControl());
+        map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    
+        map.on('load', () => {
+            map.addSource('dem', {
+                'type': 'raster-dem',
+                'url': 'mapbox://mapbox.mapbox-terrain-dem-v1'
+            });
+            map.addLayer(
+                {
+                    'id': 'hillshading',
+                    'source': 'dem',
+                    'type': 'hillshade'
+                },
+                    // Insert below land-structure-polygon layer,
+                    // where hillshading sits in the Mapbox Streets style.
+                'land-structure-polygon'
+            );
+        });
+        
+
+        map.on('load', () => {
+            map.addSource('kaza-boundary', {
+                type: 'geojson',
+                data: 'file/kaza.geojson',
+                promoteId: 'OBJECTID'
+            });
+
+            map.addLayer({
+                id: 'kaza-boundary-fill',
+                type: 'fill',
+                source: 'kaza-boundary',
+                paint: {
+                    'fill-color': 'orange',
+                    'fill-opacity': [
+                        'case',
+                        ['boolean', ['feature-state', 'hover'], false],
+                        0.6,
+                        0.1
+                    ]
+                },
+                layout: {
+                    visibility: 'none'
+                }
+
+            }, 'settlement-minor-label');
+
+            map.addLayer({
+                id: 'kaza-boundary-line',
+                type: 'line',
+                source: 'kaza-boundary',
+                paint: {
+                    'line-color': 'black',
+                    'line-width': 2,
+                    'line-width': 2
+                },
+                layout: {
+                    visibility: 'none'
+                }
+            }, 'settlement-minor-label');
+
+            map.on('click', 'kaza-boundary-fill', (e) => {
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(e.features[0].properties.NatName)
+                    .addTo(map);
+            });
+
+
+
+            // Change the cursor to a pointer when
+            // the mouse is over the states layer.
+            map.on('mouseenter', 'kaza-boundary-fill', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            // Change the cursor back to a pointer
+            // when it leaves the states layer.
+            map.on('mouseleave', 'kaza-boundary-fill', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+            let hoveredStateId = null
+
+            //hover mouse on
+            map.on('mousemove', 'kaza-boundary-fill', (e) => {
+                if (e.features.length > 0) {
+                    if (hoveredStateId !== null) {
+                        map.setFeatureState(
+                            {source: 'kaza-boundary, id: hoveredState'},
+                            {hover: false}
+                        );
+                    }
+                    hoveredStateId = e.features[0].id;
+                    map.setFeatureState(
+                        {source: 'kaza-boundary', id: hoveredStateId},
+                        { hover: true}
+                    )
+                }
+            });
+            // hover mouse leave
+            map.on('mouseleave', 'kaza-boundary-fill', () => {
+                if (hoveredStateId !== null) {
+                    map.setFeatureState(
+                        { source: 'kaza-boundary', id: hoveredStateId},
+                        { hover: false}
+                    )
+                }
+                hoveredStateId = null;
+            })
+        });
+
+
+
+        // FLy To Okavango Delta
+        document.querySelector('#fly-to-delta').addEventListener('click', () => {
+            map.flyTo({
+                center: [23.298569,-19.436162],
+                zoom: 8
+            })
+        })
+
+        //Fly Reset
+        document.querySelector('#reset-view').addEventListener('click', () => {
+            map.flyTo({
+                center: INITIAL_CENTER,
+                zoom: INITIAL_ZOOM
+            })
+        })
+        //fit to Angola
+        document.querySelector('#fit-to-angola').addEventListener('click', () => {
+            map.fitBounds([
+                [17.223816,-18.138022],
+                [23.991394,-14.320276]
+            ])
+            })
+        //Fit to Namibia
+        document.querySelector('#fit-to-namibia').addEventListener('click', () => {
+        map.fitBounds([
+            [18.712463,-20.881909],
+            [25.309753,-17.426649]
+        ])
+        })
+        //Fit to Botswana
+        document.querySelector('#fit-to-botswana').addEventListener('click', () => {
+            map.fitBounds([
+                [20.629578,-21.659981],
+                [27.518005,-17.337530]
+            ])
+            })
+        // Fit to Zambia
+        document.querySelector('#fit-to-zambia').addEventListener('click', () => {
+        map.fitBounds([
+            [20.129700,-18.325848],
+            [27.097778,-12.774304]
+        ])
+        })            
+        //Fit to ZImbabwe
+        document.querySelector('#fit-to-zimbabwe').addEventListener('click', () => {
+            map.fitBounds([
+                [24.689026,-20.470762],
+                [29.127502,-16.296415]
+            ])
+            })
+
+            //toggle NP
+        document.querySelector('#toggle-np').addEventListener('click', () => {
+            const isVisible = map.getLayoutProperty('kaza-boundary-fill', 'visibility') === 'visible'
+            if ( isVisible) {
+                map.setLayoutProperty('kaza-boundary-fill', 'visibility', 'none')
+                map.setLayoutProperty('kaza-boundary-line', 'visibility', 'none')
+            } else {
+                map.setLayoutProperty('kaza-boundary-fill', 'visibility', 'visible')
+                map.setLayoutProperty('kaza-boundary-line', 'visibility', 'visible')
+            }
+        })
+
+        
+
+    </script>
+
+</body>
+
+</html>

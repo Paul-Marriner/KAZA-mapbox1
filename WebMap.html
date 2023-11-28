@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>KAZA TFCA Birding Route</title>
+<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+<script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+<style>
+    html, body {margin: 0;
+        padding: 0;
+        height: 100%;
+        }
+
+    #map {width: 100%; 
+        flex-grow: 1; 
+        height: 100%;
+    }
+
+    #container {
+        display: flex;
+        height: 100%;
+    }
+
+    #sidebar {
+        width: 300px;
+        flex-shrink: 0;
+        height: 100%;
+    }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="sidebar"></nav>
+    <div id="map"></div>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoicGF1bG1hcnJpbmVyIiwiYSI6ImNscGF3Z2t0ajBkaTcyaHJsODFvdWJnN2UifQ.UpEPhkANGoT4v1rn6h2LMw'
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/paulmarriner/clpgj6ruc00fx01qt8r07a66a',
+            center: [24, -17],
+            zoom: 5.7,
+            projection: 'globe'
+        });
+
+        // map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+        // map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+        map.on('load', () => {
+            map.addSource('kaza-boundary', {
+                type: 'geojson',
+                data: 'file/kaza.geojson'
+            });
+
+            map.addLayer({
+                id: 'kaza-boundary-fill',
+                type: 'fill',
+                source: 'kaza-boundary',
+                layout: {
+                    visibility: 'visible'
+                },
+                paint: {
+                    'fill-color': 'orange'
+                }
+            });
+
+            map.addLayer({
+                id: 'kaza-boundary-line',
+                type: 'line',
+                source: 'kaza-boundary',
+                layout: {
+                    visibility: 'visible'
+                },
+                paint: {
+                    'line-color': 'black',
+                    'line-width': 2,
+                    'line-width': 2
+                }
+            });
+
+            map.on('click', 'kaza-boundary-fill', (e) => {
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(e.features[0].properties.NatName)
+                    .addTo(map);
+            });
+
+            // Change the cursor to a pointer when
+            // the mouse is over the states layer.
+            map.on('mouseenter', 'kaza-boundary-fill', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            // Change the cursor back to a pointer
+            // when it leaves the states layer.
+            map.on('mouseleave', 'kaza-boundary-fill', () => {
+                map.getCanvas().style.cursor = '';
+            });
+        });
+
+
+
+
+
+
+        // const reserves =[
+        //         {
+        //             name: 'Okavango Delta',
+        //             color: '',
+        //             lngLat: [22.725220, -19.399249]
+        //         },
+        //         {
+        //             name: 'Chobe National Park',
+        //             color: '',
+        //             lngLat: [24.5028116917, -18.5419437306]
+        //         },
+        //         {
+        //             name: 'Lake Ngami',
+        //             color: '',
+        //             lngLat: [22.709139065, -20.5020822695]
+        //         },
+        //         {
+        //             name: 'Makgadikgadi Pans',
+        //             color: '',
+        //             lngLat: [25.2897105586, -20.6595468184]
+        //         },
+        //         {
+        //             name: 'Eastern Caprivi Wetlands',
+        //             color: '',
+        //             lngLat: [23.9725248988, -18.0577787275]
+        //         },
+        //         {
+        //             name: 'Mahango Game Reserve and Kavango river',
+        //             color: '',
+        //             lngLat: [21.6093898111, -18.2040101657]
+        //         },
+        //         {
+        //             name: 'Tsumkwe Pan System',
+        //             color: '',
+        //             lngLat: [20.3760402251, -19.6291182618]
+        //         },
+        //     ]
+
+        //     reserves.forEach(({ name, color, lngLat }) => {
+        //         const popup = new mapboxgl.Popup({ offset: 25}).setText(name);
+
+        //         new mapboxgl.Marker({
+        //             color,
+        //             scale: 0.6
+        //         })
+        //             .setLngLat(lngLat)
+        //             .setPopup(popup)
+        //             .addTo(map);
+        //     })
+
+    </script>
+</body>
+
+</html>
